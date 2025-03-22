@@ -122,9 +122,9 @@ class NewPassword(SQLModel):
 
 class ScrappedItemsHistoryBase(SQLModel):
     city: str = Field(min_length=1, default="Dhaka", max_length=255)
-    price_min: float | None = Field(default=None, ge=0)
-    price_max: float | None = Field(default=None, ge=0)
-    stars: float | None = Field(default=None, ge=0, le=5)
+    price_min: float | None = Field(default=0, ge=0)
+    price_max: float | None = Field(default=25000, ge=0)
+    stars: float | None = Field(default=3, ge=0, le=5)
 
 
 class ScrappedItemsHistoryPublic(ScrappedItemsHistoryBase):
