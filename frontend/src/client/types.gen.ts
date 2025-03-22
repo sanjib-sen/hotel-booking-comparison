@@ -9,6 +9,13 @@ export type Body_login_login_access_token = {
   client_secret?: string | null
 }
 
+export type BookMarkedScrappedItem = {
+  id?: string
+  owner_id: string
+  bookmarked_at?: string
+  scrapped_item_id: string
+}
+
 export type HTTPValidationError = {
   detail?: Array<ValidationError>
 }
@@ -42,6 +49,73 @@ export type Message = {
 export type NewPassword = {
   token: string
   new_password: string
+}
+
+export type PrivateUserCreate = {
+  email: string
+  password: string
+  full_name: string
+  is_verified?: boolean
+}
+
+export type ScrappedItem = {
+  title: string
+  price_booking: number
+  url_booking: string
+  stars?: number | null
+  image_url?: string | null
+  id?: string
+  price_agoda: number
+  url_agoda: string
+  created_at?: string
+  updated_at?: string
+  history_id: string
+}
+
+export type ScrappedItemCreate = {
+  title: string
+  price_booking: number
+  url_booking: string
+  stars?: number | null
+  image_url?: string | null
+}
+
+export type ScrappedItemsHistoriesPublic = {
+  city?: string
+  price_min?: number | null
+  price_max?: number | null
+  stars?: number | null
+  data: Array<ScrappedItemsHistoryPublic>
+  count: number
+}
+
+export type ScrappedItemsHistory = {
+  city?: string
+  price_min?: number | null
+  price_max?: number | null
+  stars?: number | null
+  id?: string
+  owner_id: string
+  scrape_status: string
+  scrapped_time?: string
+}
+
+export type ScrappedItemsHistoryCreate = {
+  city?: string | null
+  price_min?: number | null
+  price_max?: number | null
+  stars?: number | null
+}
+
+export type ScrappedItemsHistoryPublic = {
+  city?: string
+  price_min: number | null
+  price_max: number | null
+  stars: number | null
+  id: string
+  owner_id: string
+  scrapped_time: string
+  scrape_status: string
 }
 
 export type Token = {
@@ -157,6 +231,65 @@ export type LoginRecoverPasswordHtmlContentData = {
 }
 
 export type LoginRecoverPasswordHtmlContentResponse = string
+
+export type PrivateCreateUserData = {
+  requestBody: PrivateUserCreate
+}
+
+export type PrivateCreateUserResponse = UserPublic
+
+export type ScrappedReadScrappedHistoryData = {
+  limit?: number
+  skip?: number
+}
+
+export type ScrappedReadScrappedHistoryResponse = ScrappedItemsHistoriesPublic
+
+export type ScrappedCreateScrappedHistoryData = {
+  requestBody: ScrappedItemsHistoryCreate
+}
+
+export type ScrappedCreateScrappedHistoryResponse = ScrappedItemsHistory
+
+export type ScrappedReadScrappedHistoryByIdData = {
+  id: string
+}
+
+export type ScrappedReadScrappedHistoryByIdResponse = ScrappedItemsHistory
+
+export type ScrappedReadScrappedItemsData = {
+  historyId: string
+  limit?: number
+  skip?: number
+}
+
+export type ScrappedReadScrappedItemsResponse = Array<ScrappedItem>
+
+export type ScrappedCreateScrappedItemData = {
+  historyId: string
+  requestBody: ScrappedItemCreate
+}
+
+export type ScrappedCreateScrappedItemResponse = ScrappedItem
+
+export type ScrappedBookmarkScrappedItemData = {
+  itemId: string
+}
+
+export type ScrappedBookmarkScrappedItemResponse = BookMarkedScrappedItem
+
+export type ScrappedDeleteBookmarkData = {
+  itemId: string
+}
+
+export type ScrappedDeleteBookmarkResponse = Message
+
+export type ScrappedReadBookmarkedItemsData = {
+  limit?: number
+  skip?: number
+}
+
+export type ScrappedReadBookmarkedItemsResponse = Array<BookMarkedScrappedItem>
 
 export type UsersReadUsersData = {
   limit?: number

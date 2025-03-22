@@ -1,0 +1,166 @@
+[
+  {
+    "name": "agoda.version.03",
+    "value": "CookieId=8ffa4d69-2f97-47c9-b0e2-57c1f18e530d&DLang=en-us&CurLabel=USD",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774137600.480023,
+    "httpOnly": false,
+    "secure": true
+  },
+  {
+    "name": "agoda.familyMode",
+    "value": "Mode=0",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774231528.647743,
+    "httpOnly": true,
+    "secure": true
+  },
+  {
+    "name": "agoda.price.01",
+    "value": "PriceView=1",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774217456.492442,
+    "httpOnly": false,
+    "secure": true
+  },
+  {
+    "name": "agoda.user.03",
+    "value": "UserId=225e4759-1ce8-49a1-922d-b84f58b4bac0",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774192256.49249,
+    "httpOnly": false,
+    "secure": true
+  },
+  {
+    "name": "agoda.prius",
+    "value": "PriusID=0&PointsMaxTraffic=Agoda",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774192256.492548,
+    "httpOnly": false,
+    "secure": false
+  },
+  {
+    "name": "tealiumEnable",
+    "value": "true",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1742756728,
+    "httpOnly": false,
+    "secure": false
+  },
+  {
+    "name": "_ab50group",
+    "value": "GroupB",
+    "domain": ".www.agoda.com",
+    "path": "/",
+    "expires": 1777216256.733131,
+    "httpOnly": false,
+    "secure": false
+  },
+  {
+    "name": "_40-40-20Split",
+    "value": "Group40A",
+    "domain": ".www.agoda.com",
+    "path": "/",
+    "expires": 1777216256.733262,
+    "httpOnly": false,
+    "secure": false
+  },
+  {
+    "name": "agoda.firstclicks",
+    "value": "-1||||2025-03-22T23:24:53||zkhbpsqfs1pr4ux2bupybakj||{\"IsPaid\":false,\"gclid\":\"\",\"Type\":\"\"}",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774137600.480084,
+    "httpOnly": true,
+    "secure": true
+  },
+  {
+    "name": "agoda.lastclicks",
+    "value": "-1||||2025-03-22T23:24:53||zkhbpsqfs1pr4ux2bupybakj||{\"IsPaid\":false,\"gclid\":\"\",\"Type\":\"\"}",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774137600.480104,
+    "httpOnly": true,
+    "secure": true
+  },
+  {
+    "name": "agoda.landings",
+    "value": "-1|||zkhbpsqfs1pr4ux2bupybakj|2025-03-22T23:24:53|False|19-----1|||zkhbpsqfs1pr4ux2bupybakj|2025-03-22T23:24:53|False|20-----1|||zkhbpsqfs1pr4ux2bupybakj|2025-03-22T23:24:53|False|99",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774137600.480145,
+    "httpOnly": true,
+    "secure": true
+  },
+  {
+    "name": "agoda.attr.03",
+    "value": "ATItems=-1$03-22-2025 23:24$",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774137600.480169,
+    "httpOnly": true,
+    "secure": true
+  },
+  {
+    "name": "ASP.NET_SessionId",
+    "value": "zkhbpsqfs1pr4ux2bupybakj",
+    "domain": ".www.agoda.com",
+    "path": "/",
+    "expires": -1,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "xsrf_token",
+    "value": "CfDJ8Dkuqwv-0VhLoFfD8dw7lYyWtVLW753F8b54VBw0Y9Za4bTpmfBpdgx-KcgJ1FGRVpXOT5UYRgmsUou8ckJ4-DEPi83L00rqmToiLxvyutg8gfVpA5HZmDf-RaHq2kkPfvWnnlbAX1pyXT38U4siScY",
+    "domain": "www.agoda.com",
+    "path": "/",
+    "expires": -1,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "Strict"
+  },
+  {
+    "name": "agoda.search.01",
+    "value": "SHist=1$1390$8848$1$1$2$0$0$1742658018$$0|1$1390$8848$2$1$2$0$0$1742660807$$0|1$1390$8847$2$1$2$0$0$1742670328$$0&H=",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774231528.647807,
+    "httpOnly": true,
+    "secure": true
+  },
+  {
+    "name": "agoda.analytics",
+    "value": "Id=5878296055531964756&Signature=-5601742564243569717&Expiry=1742673928657",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1742673928.596095,
+    "httpOnly": false,
+    "secure": true
+  },
+  {
+    "name": "agoda.consent",
+    "value": "BD||2025-03-22 19:05:29Z",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774206329.043043,
+    "httpOnly": false,
+    "secure": true
+  },
+  {
+    "name": "utag_main",
+    "value": "v_id:0195be683ade00187bc3fb4664e705083008507b009dc$_sn:4$_se:2$_ss:0$_st:1742672138952$ses_id:1742670332776%3Bexp-session$_pn:1%3Bexp-session",
+    "domain": ".agoda.com",
+    "path": "/",
+    "expires": 1774206338,
+    "httpOnly": false,
+    "secure": false
+  }
+]

@@ -23,6 +23,24 @@ import type {
   LoginResetPasswordResponse,
   LoginRecoverPasswordHtmlContentData,
   LoginRecoverPasswordHtmlContentResponse,
+  PrivateCreateUserData,
+  PrivateCreateUserResponse,
+  ScrappedReadScrappedHistoryData,
+  ScrappedReadScrappedHistoryResponse,
+  ScrappedCreateScrappedHistoryData,
+  ScrappedCreateScrappedHistoryResponse,
+  ScrappedReadScrappedHistoryByIdData,
+  ScrappedReadScrappedHistoryByIdResponse,
+  ScrappedReadScrappedItemsData,
+  ScrappedReadScrappedItemsResponse,
+  ScrappedCreateScrappedItemData,
+  ScrappedCreateScrappedItemResponse,
+  ScrappedBookmarkScrappedItemData,
+  ScrappedBookmarkScrappedItemResponse,
+  ScrappedDeleteBookmarkData,
+  ScrappedDeleteBookmarkResponse,
+  ScrappedReadBookmarkedItemsData,
+  ScrappedReadBookmarkedItemsResponse,
   UsersReadUsersData,
   UsersReadUsersResponse,
   UsersCreateUserData,
@@ -264,6 +282,228 @@ export class LoginService {
       url: "/api/v1/password-recovery-html-content/{email}",
       path: {
         email: data.email,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
+export class PrivateService {
+  /**
+   * Create User
+   * Create a new user.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns UserPublic Successful Response
+   * @throws ApiError
+   */
+  public static createUser(
+    data: PrivateCreateUserData,
+  ): CancelablePromise<PrivateCreateUserResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/private/users/",
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+}
+
+export class ScrappedService {
+  /**
+   * Read Scrapped History
+   * Retrieve scrapped items history.
+   * @param data The data for the request.
+   * @param data.skip
+   * @param data.limit
+   * @returns ScrappedItemsHistoriesPublic Successful Response
+   * @throws ApiError
+   */
+  public static readScrappedHistory(
+    data: ScrappedReadScrappedHistoryData = {},
+  ): CancelablePromise<ScrappedReadScrappedHistoryResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/scrapped/history",
+      query: {
+        skip: data.skip,
+        limit: data.limit,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Create Scrapped History
+   * Create new scrapped items history.
+   * @param data The data for the request.
+   * @param data.requestBody
+   * @returns ScrappedItemsHistory Successful Response
+   * @throws ApiError
+   */
+  public static createScrappedHistory(
+    data: ScrappedCreateScrappedHistoryData,
+  ): CancelablePromise<ScrappedCreateScrappedHistoryResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/scrapped/history",
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Read Scrapped History By Id
+   * Get scrapped history by ID.
+   * @param data The data for the request.
+   * @param data.id
+   * @returns ScrappedItemsHistory Successful Response
+   * @throws ApiError
+   */
+  public static readScrappedHistoryById(
+    data: ScrappedReadScrappedHistoryByIdData,
+  ): CancelablePromise<ScrappedReadScrappedHistoryByIdResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/scrapped/history/{id}",
+      path: {
+        id: data.id,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Read Scrapped Items
+   * Retrieve scrapped items for a specific history.
+   * @param data The data for the request.
+   * @param data.historyId
+   * @param data.skip
+   * @param data.limit
+   * @returns ScrappedItem Successful Response
+   * @throws ApiError
+   */
+  public static readScrappedItems(
+    data: ScrappedReadScrappedItemsData,
+  ): CancelablePromise<ScrappedReadScrappedItemsResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/scrapped/items/{history_id}",
+      path: {
+        history_id: data.historyId,
+      },
+      query: {
+        skip: data.skip,
+        limit: data.limit,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Create Scrapped Item
+   * Create new scrapped item.
+   * @param data The data for the request.
+   * @param data.historyId
+   * @param data.requestBody
+   * @returns ScrappedItem Successful Response
+   * @throws ApiError
+   */
+  public static createScrappedItem(
+    data: ScrappedCreateScrappedItemData,
+  ): CancelablePromise<ScrappedCreateScrappedItemResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/scrapped/items/{history_id}",
+      path: {
+        history_id: data.historyId,
+      },
+      body: data.requestBody,
+      mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Bookmark Scrapped Item
+   * Bookmark a scrapped item.
+   * @param data The data for the request.
+   * @param data.itemId
+   * @returns BookMarkedScrappedItem Successful Response
+   * @throws ApiError
+   */
+  public static bookmarkScrappedItem(
+    data: ScrappedBookmarkScrappedItemData,
+  ): CancelablePromise<ScrappedBookmarkScrappedItemResponse> {
+    return __request(OpenAPI, {
+      method: "POST",
+      url: "/api/v1/scrapped/bookmark/{item_id}",
+      path: {
+        item_id: data.itemId,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Delete Bookmark
+   * Delete a bookmarked item.
+   * @param data The data for the request.
+   * @param data.itemId
+   * @returns Message Successful Response
+   * @throws ApiError
+   */
+  public static deleteBookmark(
+    data: ScrappedDeleteBookmarkData,
+  ): CancelablePromise<ScrappedDeleteBookmarkResponse> {
+    return __request(OpenAPI, {
+      method: "DELETE",
+      url: "/api/v1/scrapped/bookmark/{item_id}",
+      path: {
+        item_id: data.itemId,
+      },
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Read Bookmarked Items
+   * Retrieve bookmarked scrapped items.
+   * @param data The data for the request.
+   * @param data.skip
+   * @param data.limit
+   * @returns BookMarkedScrappedItem Successful Response
+   * @throws ApiError
+   */
+  public static readBookmarkedItems(
+    data: ScrappedReadBookmarkedItemsData = {},
+  ): CancelablePromise<ScrappedReadBookmarkedItemsResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/scrapped/bookmarks",
+      query: {
+        skip: data.skip,
+        limit: data.limit,
       },
       errors: {
         422: "Validation Error",

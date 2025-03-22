@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 from pydantic import EmailStr
 from sqlmodel import Field, Relationship, SQLModel
@@ -44,6 +45,12 @@ class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)
+    scrapped_items_history: list["ScrappedItemsHistory"] = Relationship(
+        back_populates="owner", cascade_delete=True
+    )
+    bookmarked_scrapped_items: list["BookMarkedScrappedItem"] = Relationship(
+        back_populates="owner", cascade_delete=True
+    )
 
 
 # Properties to return via API, id is always required
@@ -111,3 +118,85 @@ class TokenPayload(SQLModel):
 class NewPassword(SQLModel):
     token: str
     new_password: str = Field(min_length=8, max_length=40)
+
+
+class ScrappedItemsHistoryBase(SQLModel):
+    city: str = Field(min_length=1, default="Dhaka", max_length=255)
+    price_min: float | None = Field(default=None, ge=0)
+    price_max: float | None = Field(default=None, ge=0)
+    stars: float | None = Field(default=None, ge=0, le=5)
+
+
+class ScrappedItemsHistoryPublic(ScrappedItemsHistoryBase):
+    id: uuid.UUID
+    owner_id: uuid.UUID
+    price_min: float | None
+    price_max: float | None
+    stars: float | None
+    scrapped_time: datetime
+    scrape_status: str
+
+
+class ScrappedItemsHistoriesPublic(ScrappedItemsHistoryBase):
+    data: list[ScrappedItemsHistoryPublic]
+    count: int
+
+
+class ScrappedItemsHistoryCreate(ScrappedItemsHistoryBase):
+    city: str | None = Field(default=None, min_length=1, max_length=255)
+    price_min: float | None = Field(default=None, ge=0)
+    price_max: float | None = Field(default=None, ge=0)
+    stars: float | None = Field(default=None, ge=0, le=5)
+
+
+class ScrappedItemsHistory(ScrappedItemsHistoryBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    owner_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    scrape_status: str = Field(min_length=1, max_length=255)
+    owner: User = Relationship(back_populates="scrapped_items_history")
+    scrapped_time: datetime = Field(default_factory=datetime.now)
+    scrapped_items: list["ScrappedItem"] = Relationship(
+        back_populates="history", cascade_delete=True
+    )
+
+
+class ScrappedItemBase(SQLModel):
+    title: str = Field(min_length=1, max_length=255)
+    price_booking: float = Field(ge=0)
+    url_booking: str = Field(min_length=1, max_length=255)
+    stars: float | None = Field(default=None, ge=0, le=5)
+    image_url: str | None = Field(default=None, max_length=255)
+
+
+class ScrappedItem(ScrappedItemBase, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    price_agoda: float = Field(ge=0)
+    url_agoda: str = Field(min_length=1, max_length=255)
+    created_at: datetime = Field(default_factory=datetime.now)
+    updated_at: datetime = Field(default_factory=datetime.now)
+    history_id: uuid.UUID = Field(
+        foreign_key="scrappeditemshistory.id", nullable=False, ondelete="CASCADE"
+    )
+    history: ScrappedItemsHistory | None = Relationship(back_populates="scrapped_items")
+
+
+class BookMarkedScrappedItem(SQLModel, table=True):
+    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
+    owner_id: uuid.UUID = Field(
+        foreign_key="user.id", nullable=False, ondelete="CASCADE"
+    )
+    owner: User | None = Relationship(back_populates="bookmarked_scrapped_items")
+    bookmarked_at: datetime = Field(default_factory=datetime.now)
+    scrapped_item_id: uuid.UUID = Field(
+        foreign_key="scrappeditem.id", nullable=False, ondelete="CASCADE"
+    )
+
+
+class BookMarkedScrappedItemCreate(SQLModel):
+    pass
+
+
+class ScrappedItemCreate(ScrappedItemBase):
+    pass
