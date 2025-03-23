@@ -26,7 +26,7 @@ from app.models import (
 router = APIRouter(prefix="/scrapped", tags=["scrapped"])
 
 
-async def run_crawler_task(
+def run_crawler_task(
     history_id: uuid.UUID,
     city: str,
     price_min: float,
@@ -248,7 +248,7 @@ async def run_crawler_task(
 
 
 @router.get("/history", response_model=ScrappedItemsHistoriesPublic)
-def read_scrapped_history(
+async def read_scrapped_history(
     session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
 ) -> Any:
     """
@@ -278,7 +278,7 @@ def read_scrapped_history(
 
 
 @router.post("/history", response_model=ScrappedItemsHistory)
-def create_scrapped_history(
+async def create_scrapped_history(
     *,
     session: SessionDep,
     current_user: CurrentUser,
@@ -318,7 +318,7 @@ def create_scrapped_history(
 
 
 @router.get("/history/{id}", response_model=ScrappedItemsHistory)
-def read_scrapped_history_by_id(
+async def read_scrapped_history_by_id(
     session: SessionDep, current_user: CurrentUser, id: uuid.UUID
 ) -> Any:
     """
@@ -333,7 +333,7 @@ def read_scrapped_history_by_id(
 
 
 @router.get("/items/{history_id}", response_model=ScrappedItemsPublic)
-def read_scrapped_items(
+async def read_scrapped_items(
     session: SessionDep,
     current_user: CurrentUser,
     history_id: uuid.UUID,
@@ -366,7 +366,7 @@ def read_scrapped_items(
 
 
 @router.post("/items/{history_id}", response_model=ScrappedItem)
-def create_scrapped_item(
+async def create_scrapped_item(
     *,
     session: SessionDep,
     current_user: CurrentUser,
@@ -390,7 +390,7 @@ def create_scrapped_item(
 
 
 @router.post("/bookmark/{item_id}", response_model=BookMarkedScrappedItem)
-def bookmark_scrapped_item(
+async def bookmark_scrapped_item(
     *,
     session: SessionDep,
     current_user: CurrentUser,
@@ -416,7 +416,7 @@ def bookmark_scrapped_item(
 
 
 @router.get("/bookmarks", response_model=list[BookMarkedScrappedItem])
-def read_bookmarked_items(
+async def read_bookmarked_items(
     session: SessionDep, current_user: CurrentUser, skip: int = 0, limit: int = 100
 ) -> Any:
     """
@@ -435,7 +435,7 @@ def read_bookmarked_items(
 
 
 @router.delete("/bookmark/{item_id}")
-def delete_bookmark(
+async def delete_bookmark(
     session: SessionDep, current_user: CurrentUser, item_id: uuid.UUID
 ) -> Message:
     """
