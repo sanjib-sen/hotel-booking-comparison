@@ -3,7 +3,6 @@ import os
 from urllib.parse import urlencode
 
 import scrapy
-from scrapy.crawler import CrawlerProcess
 from scrapy_playwright.page import PageMethod
 
 
@@ -54,8 +53,8 @@ class AgodaSpider(scrapy.Spider):
         self.rooms = rooms
         self.children = children
         self.hotel_star_rating = hotel_star_rating
-        self.price_from = price_from
-        self.price_to = price_to
+        self.price_from = int(int(price_from) / 125)
+        self.price_to = int(int(price_to) / 125)
         self.cookies_path = cookies_path
         self.city_id = None
         self.results = []
@@ -213,23 +212,19 @@ class AgodaSpider(scrapy.Spider):
                     url_element = card.css(
                         'a[data-selenium="hotel-name"]::attr(href)'
                     ).get()
-                    url = response.urljoin(url_element) if url_element else None
+                    url = (
+                        response.urljoin(url_element).split("?")[0]
+                        if url_element
+                        else None
+                    )
 
                     # Extract star rating
                     stars = len(card.css('div[data-testid="rating-container"] svg'))
 
-                    # Extract price
-                    currency = card.css(
-                        'div[data-element-name="final-price"] span[data-selenium="hotel-currency"]::text'
-                    ).get()
                     price_value = card.css(
                         'div[data-element-name="final-price"] span[data-selenium="display-price"]::text'
                     ).get()
-                    price = (
-                        f"{currency} {price_value}"
-                        if currency and price_value
-                        else None
-                    )
+                    price = price_value
 
                     # Extract image URL
                     image_element = card.css("div.Overlay img::attr(srcset)").get()
@@ -268,78 +263,3 @@ class AgodaSpider(scrapy.Spider):
     def handle_error(self, failure):
         self.logger.error(f"Request failed: {failure.value}")
         return None
-
-
-def run_agoda_crawler(
-    location="Dhaka",
-    checkin="2025-03-23",
-    checkout="2025-03-25",
-    rooms="1",
-    adults="2",
-    children="0",
-    hotel_star_rating="4",
-    price_from="10",
-    price_to="40",
-    cookies_path="cookies_agoda.json",
-):
-    """
-    Run the Agoda crawler with the specified parameters and return the results as JSON
-
-    Args:
-        location: Location/city to search for
-        checkin: Check-in date in YYYY-MM-DD format
-        checkout: Check-out date in YYYY-MM-DD format
-        rooms: Number of rooms
-        adults: Number of adults
-        children: Number of children
-        hotel_star_rating: Desired hotel star rating
-        price_from: Minimum price
-        price_to: Maximum price
-        cookies_path: Path to cookies file for authentication
-
-    Returns:
-        list: List of dictionaries containing hotel information
-    """
-    import json
-    import os
-    import tempfile
-
-    # Create a temporary file to store the output
-    temp_output = tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w+t")
-    temp_output.close()
-
-    # Configure crawler settings to write to the temporary file
-    process = CrawlerProcess(
-        {
-            "FEED_FORMAT": "json",
-            "FEED_URI": f"file://{temp_output.name}",
-        }
-    )
-
-    # Add our spider to crawl
-    process.crawl(
-        AgodaSpider,
-        location=location,
-        checkin=checkin,
-        checkout=checkout,
-        rooms=rooms,
-        adults=adults,
-        children=children,
-        hotel_star_rating=hotel_star_rating,
-        price_from=price_from,
-        price_to=price_to,
-        cookies_path=cookies_path,
-    )
-
-    # Start the crawling process
-    process.start()  # This will block until the crawling is finished
-
-    # Read the results from the temporary file
-    with open(temp_output.name) as f:
-        results = json.load(f)
-
-    # Clean up the temporary file
-    os.unlink(temp_output.name)
-
-    # Return the collected results
-    return results

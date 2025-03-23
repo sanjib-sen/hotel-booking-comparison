@@ -342,7 +342,7 @@ export class ScrappedService {
 
   /**
    * Create Scrapped History
-   * Create new scrapped items history.
+   * Create new scrapped items history and start crawler.
    * @param data The data for the request.
    * @param data.requestBody
    * @returns ScrappedItemsHistory Successful Response

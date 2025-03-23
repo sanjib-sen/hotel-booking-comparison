@@ -32,25 +32,22 @@ async def run_crawler_task(
     session: SessionDep,
 ):
     """
-    Background task to run the booking spider crawler and save results
+    Background task to run both booking and agoda spiders and save/match results
     """
     try:
-        # Create a new session for this background task
-
-        # Update history status to "running"
-
         # Calculate checkin/checkout dates
         tomorrow = datetime.now() + timedelta(days=1)
         day_after_tomorrow = tomorrow + timedelta(days=1)
         checkin = tomorrow.strftime("%Y-%m-%d")
         checkout = day_after_tomorrow.strftime("%Y-%m-%d")
 
-        # Format price range and hotel class
+        # Format price range and hotel class for booking.com
         price_range = f"BDT-{int(price_min)}-{int(price_max)}-1"
         hotel_class = str(int(stars))
 
-        # Build command to run the spider
-        cmd = [
+        # Step 1: Run the booking_spider
+        booking_results_file = f"booking_results_{history_id}.json"
+        booking_cmd = [
             "scrapy",
             "crawl",
             "booking_spider",
@@ -65,22 +62,30 @@ async def run_crawler_task(
             "-a",
             f"hotel_class={hotel_class}",
             "-o",
-            f"results_{history_id}.json",
+            booking_results_file,
         ]
 
-        print(f"Running command: {' '.join(cmd)}")
+        print(f"Running booking.com crawler: {' '.join(booking_cmd)}")
 
-        # Run the spider as a subprocess
-        process = subprocess.Popen(
-            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        booking_process = subprocess.Popen(
+            booking_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
         )
 
-        stdout, stderr = process.communicate()
-        try:
-            with open(f"results_{history_id}.json") as f:
-                results = json.load(f)
+        booking_stdout, booking_stderr = booking_process.communicate()
+        booking_results = []
 
-            print(f"Scraped {len(results)} items")
+        # Process booking.com results
+        try:
+            # Update history status to in-progress
+            scrapped_history = session.get(ScrappedItemsHistory, history_id)
+            scrapped_history.scrape_status = "booking_spider_completed"
+            session.commit()
+            session.refresh(scrapped_history)
+
+            with open(booking_results_file) as f:
+                booking_results = json.load(f)
+
+            print(f"Scraped {len(booking_results)} items from booking.com")
 
             # Create all items in a list
             scraped_items = [
@@ -96,30 +101,146 @@ async def run_crawler_task(
                     image_url=result.get("image_url", None),
                     history_id=history_id,
                 )
-                for result in results
+                for result in booking_results
             ]
 
             # Bulk add all items
             session.bulk_save_objects(scraped_items)
             session.commit()
 
+        except Exception as e:
+            print(f"Error processing booking.com results: {str(e)}")
             scrapped_history = session.get(ScrappedItemsHistory, history_id)
-            scrapped_history.scrape_status = "booking_spider_completed"
+            scrapped_history.scrape_status = f"booking_failed: {str(e)}"
+            session.commit()
+            session.refresh(scrapped_history)
+            return
+
+        # Step 2: Run the agoda_spider
+        agoda_results_file = f"agoda_results_{history_id}.json"
+
+        # Update history status
+        scrapped_history = session.get(ScrappedItemsHistory, history_id)
+        scrapped_history.scrape_status = "running_agoda_spider"
+        session.commit()
+
+        # Format parameters for Agoda
+        agoda_cmd = [
+            "scrapy",
+            "crawl",
+            "agoda_spider",
+            "-a",
+            f"location={city}",
+            "-a",
+            f"checkin={checkin}",
+            "-a",
+            f"checkout={checkout}",
+            "-a",
+            f"adults={2}",  # Default to 2 adults
+            "-a",
+            f"rooms={1}",  # Default to 1 room
+            "-a",
+            f"hotel_star_rating={int(stars)}",
+            "-a",
+            f"price_from={int(price_min)}",
+            "-a",
+            f"price_to={int(price_max)}",
+            "-o",
+            agoda_results_file,
+        ]
+
+        print(f"Running Agoda crawler: {' '.join(agoda_cmd)}")
+
+        agoda_process = subprocess.Popen(
+            agoda_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+
+        agoda_stdout, agoda_stderr = agoda_process.communicate()
+        print(f"Agoda stdout: {agoda_stdout}")
+        print(f"Agoda stderr: {agoda_stderr}")
+
+        try:
+            with open(agoda_results_file) as f:
+                agoda_results = json.load(f)
+
+            print(f"Scraped {len(agoda_results)} items from Agoda")
+
+            # Step 3: Match results from both sources by title similarity
+            # Get all scraped items for this history
+            statement = select(ScrappedItem).where(
+                ScrappedItem.history_id == history_id
+            )
+            scraped_items = session.exec(statement).all()
+
+            # Create a mapping for fuzzy matching hotel names
+            from difflib import SequenceMatcher
+
+            def similar(a, b):
+                return SequenceMatcher(None, a.lower(), b.lower()).ratio()
+
+            # For each Agoda result, find the best match in our database
+            match_count = 0
+            for agoda_item in agoda_results:
+                agoda_title = agoda_item.get("title", "")
+                if not agoda_title:
+                    continue
+
+                best_match = None
+                best_score = 0.8  # Threshold for a good match
+
+                for db_item in scraped_items:
+                    score = similar(agoda_title, db_item.title)
+                    if score > best_score:
+                        best_score = score
+                        best_match = db_item
+
+                # If we found a good match, update with Agoda data
+                if best_match:
+                    match_count += 1
+                    best_match.price_agoda = (
+                        float(agoda_item.get("price", "0").replace("$", "").strip())
+                        * 125
+                    )
+                    best_match.url_agoda = agoda_item.get("url", "")
+                    best_match.updated_at = datetime.now()
+
+            session.commit()
+            print(f"Matched and updated {match_count} items with Agoda data")
+
+            # Update history status to completed
+            scrapped_history = session.get(ScrappedItemsHistory, history_id)
+            scrapped_history.scrape_status = "completed"
             session.commit()
             session.refresh(scrapped_history)
 
         except Exception as e:
-            print(f"Error processing results: {str(e)}")
+            print(f"Error processing Agoda results: {str(e)}")
             scrapped_history = session.get(ScrappedItemsHistory, history_id)
-            scrapped_history.scrape_status = f"failed. {str(e)}"
+            scrapped_history.scrape_status = f"agoda_failed: {str(e)}"
             session.commit()
             session.refresh(scrapped_history)
 
     except Exception as e:
         print(f"Background task error: {str(e)}")
+        try:
+            scrapped_history = session.get(ScrappedItemsHistory, history_id)
+            scrapped_history.scrape_status = f"failed: {str(e)}"
+            session.commit()
+        except Exception as e:
+            scrapped_history = session.get(ScrappedItemsHistory, history_id)
+            print(f"Could not update history status: {str(e)}")
+            scrapped_history.scrape_status = f"failed: {str(e)}"
+            session.commit()
+            session.refresh(scrapped_history)
     finally:
-        os.remove(f"results_{history_id}.json")
-        print("done")
+        # Clean up temporary files
+        for file in [
+            f"booking_results_{history_id}.json",
+            f"agoda_results_{history_id}.json",
+        ]:
+            if os.path.exists(file):
+                os.remove(file)
+        print("Background task completed")
 
 
 @router.get("/history", response_model=ScrappedItemsHistoriesPublic)
@@ -164,7 +285,7 @@ def create_scrapped_history(
     Create new scrapped items history and start crawler.
     """
     # Set default values if not provided
-    city = history_in.city or "Dhaka, Bangladesh"
+    city = history_in.city or "Dhaka"
     price_min = history_in.price_min or 1500
     price_max = history_in.price_max or 25500
     stars = history_in.stars or 3

@@ -65,8 +65,8 @@ export type ScrappedItem = {
   stars?: number | null
   image_url?: string | null
   id?: string
-  price_agoda: number
-  url_agoda: string
+  price_agoda?: number | null
+  url_agoda?: string | null
   created_at?: string
   updated_at?: string
   history_id: string
@@ -78,6 +78,17 @@ export type ScrappedItemCreate = {
   url_booking: string
   stars?: number | null
   image_url?: string | null
+}
+
+export type ScrappedItemPublic = {
+  title: string
+  price_booking: number
+  url_booking: string
+  stars: number | null
+  image_url: string | null
+  id: string
+  price_agoda: number | null
+  url_agoda: string | null
 }
 
 export type ScrappedItemsHistoriesPublic = {
@@ -119,12 +130,8 @@ export type ScrappedItemsHistoryPublic = {
 }
 
 export type ScrappedItemsPublic = {
-  title: string
-  price_booking: number
-  url_booking: string
-  stars: number | null
-  image_url: string | null
-  id: string
+  data: Array<ScrappedItemPublic>
+  count: number
 }
 
 export type Token = {

@@ -18,7 +18,7 @@ class BookingSpider(scrapy.Spider):
 
     def __init__(
         self,
-        location="Dhaka, Bangladesh",
+        location="Dhaka",
         checkin="2025-03-22",
         checkout="2025-03-23",
         adults="2",
@@ -30,7 +30,7 @@ class BookingSpider(scrapy.Spider):
         **kwargs,
     ):
         super(BookingSpider, self).__init__(*args, **kwargs)
-        self.location = location
+        self.location = location + ", Bangladesh"
         self.checkin = checkin
         self.checkout = checkout
         self.adults = adults
