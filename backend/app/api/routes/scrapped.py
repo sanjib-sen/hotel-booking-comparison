@@ -160,7 +160,8 @@ def run_crawler_task(
         )
 
         agoda_stdout, agoda_stderr = agoda_process.communicate()
-
+        print(f"Agoda stdout: {agoda_stdout}")
+        print(f"Agoda stderr: {agoda_stderr}")
         try:
             with open(agoda_results_file) as f:
                 agoda_results = json.load(f)
