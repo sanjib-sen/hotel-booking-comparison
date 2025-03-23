@@ -71,7 +71,10 @@ function Dashboard() {
         </Box>
 
         <Box as="form" onSubmit={handleSubmit}>
-          <VStack gap={6}>
+          <Grid
+            templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }}
+            gap={{ base: 4, md: 6 }}
+          >
             <FormControl>
               <FormLabel>City</FormLabel>
               <Input
@@ -82,14 +85,14 @@ function Dashboard() {
             </FormControl>
 
             <FormControl>
-              <FormLabel>Minimum Price</FormLabel>
+              <FormLabel>Minimum Price (BDT)</FormLabel>
               <NumberInput
                 value={formData.price_min}
                 onChange={(value: string) => setFormData({ ...formData, price_min: Number(value) })}
                 min={0}
                 max={formData.price_max}
               >
-                <NumberInputField />
+                <NumberInputField height={"40px"} />
                 <NumberInputStepper>
                   <NumberIncrementStepper />
                   <NumberDecrementStepper />
@@ -98,13 +101,13 @@ function Dashboard() {
             </FormControl>
 
             <FormControl>
-              <FormLabel>Maximum Price</FormLabel>
+              <FormLabel>Maximum Price (BDT)</FormLabel>
               <NumberInput
                 value={formData.price_max}
                 onChange={(value: string) => setFormData({ ...formData, price_max: Number(value) })}
                 min={formData.price_min}
               >
-                <NumberInputField />
+                <NumberInputField height={"40px"} />
                 <NumberInputStepper>
                   <NumberIncrementStepper />
                   <NumberDecrementStepper />
@@ -121,14 +124,16 @@ function Dashboard() {
                 max={5}
                 step={1}
               >
-                <NumberInputField />
+                <NumberInputField height={"40px"} />
                 <NumberInputStepper>
                   <NumberIncrementStepper />
                   <NumberDecrementStepper />
                 </NumberInputStepper>
               </NumberInput>
             </FormControl>
+          </Grid>
 
+          <Box mt={8}>
             <Button
               type="submit"
               colorScheme="blue"
@@ -138,7 +143,7 @@ function Dashboard() {
             >
               {isLoading ? 'Starting Search...' : 'Search Hotels'}
             </Button>
-          </VStack>
+          </Box>
         </Box>
       </VStack>
     </Container>
