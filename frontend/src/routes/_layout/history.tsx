@@ -5,6 +5,7 @@ import {
     Heading,
     Table,
     VStack,
+    Button,
 } from "@chakra-ui/react"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
@@ -12,7 +13,6 @@ import { FiSearch } from "react-icons/fi"
 import { z } from "zod"
 
 import { ScrappedService } from "@/client"
-import AddHistory from "@/components/History/AddHistory"
 import PendingItems from "@/components/Pending/PendingItems"
 import {
     PaginationItems,
@@ -57,6 +57,16 @@ function HistoryTable() {
     const historyItems = data?.data ?? []
     const count = data?.count ?? 0
 
+    // Helper function to check if history item has viewable results
+    const hasViewableResults = (status: string) => {
+        return !(
+            status === "pending" ||
+            status.includes("failed") ||
+            status === "error" ||
+            status === "no_results"
+        );
+    }
+
     if (isLoading) {
         return <PendingItems />
     }
@@ -95,7 +105,26 @@ function HistoryTable() {
                 </Table.Header>
                 <Table.Body>
                     {historyItems?.map((item) => (
-                        <Table.Row key={item.id} opacity={isPlaceholderData ? 0.5 : 1}>
+                        <Table.Row
+                            key={item.id}
+                            opacity={isPlaceholderData ? 0.5 : 1}
+                            cursor={hasViewableResults(item.scrape_status) ? "pointer" : "not-allowed"}
+                            _hover={{
+                                bg: hasViewableResults(item.scrape_status) ? "gray.100" : "transparent",
+                                _dark: {
+                                    bg: hasViewableResults(item.scrape_status) ? "gray.700" : "transparent"
+                                }
+                            }}
+                            onClick={() => {
+                                if (!hasViewableResults(item.scrape_status)) {
+                                    return;
+                                }
+                                navigate({
+                                    to: "/_layout/search-results",
+                                    search: { search_id: item.id }
+                                });
+                            }}
+                        >
                             <Table.Cell truncate maxW="sm">
                                 {item.id}
                             </Table.Cell>
@@ -110,6 +139,25 @@ function HistoryTable() {
                             </Table.Cell>
                             <Table.Cell truncate maxW="sm">
                                 {item.scrape_status}
+                            </Table.Cell>
+                            <Table.Cell truncate maxW="sm">
+                                {new Date(item.scrapped_time).toLocaleDateString()}
+                            </Table.Cell>
+                            <Table.Cell>
+                                <Button
+                                    size="sm"
+                                    colorScheme="blue"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigate({
+                                            to: "/_layout/search-results",
+                                            search: { search_id: item.id }
+                                        });
+                                    }}
+                                    disabled={!hasViewableResults(item.scrape_status)}
+                                >
+                                    View Results
+                                </Button>
                             </Table.Cell>
                         </Table.Row>
                     ))}
@@ -138,7 +186,7 @@ function History() {
             <Heading size="lg" pt={12}>
                 Scraping History
             </Heading>
-            <AddHistory />
+            {/* <AddHistory /> */}
             <HistoryTable />
         </Container>
     )
