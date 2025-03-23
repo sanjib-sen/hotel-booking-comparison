@@ -1,9 +1,24 @@
-import { Box, Container, Button, VStack, Heading, Text, Input, Stack, HStack, Flex, Grid } from "@chakra-ui/react"
+import { ScrappedService } from "@/client"
 import { FormControl, FormLabel } from "@chakra-ui/form-control"
-import { NumberInput, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper } from "@chakra-ui/number-input"
+import {
+  NumberDecrementStepper,
+  NumberIncrementStepper,
+  NumberInput,
+  NumberInputField,
+  NumberInputStepper,
+} from "@chakra-ui/number-input"
+import {
+  Box,
+  Button,
+  Container,
+  Grid,
+  Heading,
+  Input,
+  Text,
+  VStack,
+} from "@chakra-ui/react"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
-import { ScrappedService } from "@/client"
 
 export const Route = createFileRoute("/_layout/")({
   component: Dashboard,
@@ -38,21 +53,21 @@ function Dashboard() {
           price_min: formData.price_min,
           price_max: formData.price_max,
           stars: formData.stars,
-        }
+        },
       })
 
       if (!response.id) {
-        throw new Error('No search ID returned from server');
+        throw new Error("No search ID returned from server")
       }
 
       // Redirect to search results page with the history ID
       navigate({
-        to: '/search-results',
-        search: { search_id: response.id.toString() }
+        to: "/search-results",
+        search: { search_id: response.id.toString() },
       })
     } catch (error) {
-      console.error('Error creating search history:', error)
-      alert('Failed to start hotel search. Please try again.')
+      console.error("Error creating search history:", error)
+      alert("Failed to start hotel search. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -72,14 +87,20 @@ function Dashboard() {
 
         <Box as="form" onSubmit={handleSubmit}>
           <Grid
-            templateColumns={{ base: "1fr", md: "repeat(2, 1fr)", lg: "repeat(4, 1fr)" }}
+            templateColumns={{
+              base: "1fr",
+              md: "repeat(2, 1fr)",
+              lg: "repeat(4, 1fr)",
+            }}
             gap={{ base: 4, md: 6 }}
           >
             <FormControl>
               <FormLabel>City</FormLabel>
               <Input
                 value={formData.city}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, city: e.target.value })}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setFormData({ ...formData, city: e.target.value })
+                }
                 placeholder="Enter city name"
               />
             </FormControl>
@@ -88,7 +109,9 @@ function Dashboard() {
               <FormLabel>Minimum Price (BDT)</FormLabel>
               <NumberInput
                 value={formData.price_min}
-                onChange={(value: string) => setFormData({ ...formData, price_min: Number(value) })}
+                onChange={(value: string) =>
+                  setFormData({ ...formData, price_min: Number(value) })
+                }
                 min={0}
                 max={formData.price_max}
               >
@@ -104,7 +127,9 @@ function Dashboard() {
               <FormLabel>Maximum Price (BDT)</FormLabel>
               <NumberInput
                 value={formData.price_max}
-                onChange={(value: string) => setFormData({ ...formData, price_max: Number(value) })}
+                onChange={(value: string) =>
+                  setFormData({ ...formData, price_max: Number(value) })
+                }
                 min={formData.price_min}
               >
                 <NumberInputField height={"40px"} />
@@ -119,7 +144,9 @@ function Dashboard() {
               <FormLabel>Star Rating</FormLabel>
               <NumberInput
                 value={formData.stars}
-                onChange={(value: string) => setFormData({ ...formData, stars: Number(value) })}
+                onChange={(value: string) =>
+                  setFormData({ ...formData, stars: Number(value) })
+                }
                 min={0}
                 max={5}
                 step={1}
@@ -141,7 +168,7 @@ function Dashboard() {
               size="lg"
               disabled={isLoading}
             >
-              {isLoading ? 'Starting Search...' : 'Search Hotels'}
+              {isLoading ? "Starting Search..." : "Search Hotels"}
             </Button>
           </Box>
         </Box>
