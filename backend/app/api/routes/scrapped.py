@@ -6,9 +6,12 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from fastapi import APIRouter, BackgroundTasks, HTTPException
-from sqlmodel import func, select
+
+# Import additional needed modules
+from sqlmodel import Session, func, select
 
 from app.api.deps import CurrentUser, SessionDep
+from app.core.db import engine  # You'll need access to your engine
 from app.models import (
     BookMarkedScrappedItem,
     Message,
@@ -29,11 +32,12 @@ async def run_crawler_task(
     price_min: float,
     price_max: float,
     stars: float,
-    session: SessionDep,
 ):
     """
     Background task to run both booking and agoda spiders and save/match results
     """
+
+    session = Session(engine)
     try:
         # Calculate checkin/checkout dates
         tomorrow = datetime.now() + timedelta(days=1)
@@ -308,7 +312,6 @@ def create_scrapped_history(
         price_min=price_min,
         price_max=price_max,
         stars=stars,
-        session=session,
     )
 
     return history
