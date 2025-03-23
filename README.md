@@ -18,16 +18,18 @@ This is a full-stack application built with FastAPI, Scrapy and React.
 docker compose up -d
 ```
 
+3. Open your browser and visit:
+   - **http://localhost:5173**
+
 That's it! The application will be available at:
 
-- Frontend: http://localhost
-- Backend API: http://localhost/api/
-- API documentation: http://localhost/api/docs
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000/api/
+- API documentation: http://localhost:8000/api/docs
 
-Default superuser credentials:
+## Demo Video
 
-- Email: admin@example.com
-- Password: changethis
+[Demo Video](https://drive.google.com/drive/folders/1C73uaBC3iW_QEvNygQL280E8DDFb4Ohz?usp=sharing)
 
 ## Note on Environment Variables
 
