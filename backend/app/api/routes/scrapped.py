@@ -203,7 +203,7 @@ def run_crawler_task(
                     match_count += 1
                     best_match.price_agoda = (
                         float(agoda_item.get("price", "0").replace("$", "").strip())
-                        * 125
+                        * 122
                     )
                     best_match.url_agoda = agoda_item.get("url", "")
                     best_match.updated_at = datetime.now()

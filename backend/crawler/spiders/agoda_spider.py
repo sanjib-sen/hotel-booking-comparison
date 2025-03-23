@@ -53,8 +53,8 @@ class AgodaSpider(scrapy.Spider):
         self.rooms = rooms
         self.children = children
         self.hotel_star_rating = hotel_star_rating
-        self.price_from = int(int(price_from) / 125)
-        self.price_to = int(int(price_to) / 125)
+        self.price_from = int(int(price_from) / 122)
+        self.price_to = int(int(price_to) / 122)
         self.cookies_path = cookies_path
         self.city_id = None
         self.results = []

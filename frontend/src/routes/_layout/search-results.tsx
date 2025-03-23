@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { createFileRoute, useParams, useSearch } from "@tanstack/react-router";
+import { createFileRoute, useSearch } from "@tanstack/react-router";
 import {
     Box,
     Container,
@@ -13,9 +13,9 @@ import {
     Link as ChakraLink,
     Spinner,
     Center,
-    StackProps,
 } from "@chakra-ui/react";
 import { FaStar } from "react-icons/fa";
+import { HiTag } from "react-icons/hi";
 import { ScrappedService } from "@/client";
 import { OpenAPI } from "@/client";
 
@@ -23,7 +23,9 @@ type ScrappedItem = {
     id: string;
     title: string;
     price_booking: number;
+    price_agoda: number | null;
     url_booking: string;
+    url_agoda: string | null;
     stars: number | null;
     image_url: string | null;
 }
@@ -65,14 +67,30 @@ function SearchResults() {
                 console.log("History status:", historyResponse.scrape_status);
                 setStatus(historyResponse.scrape_status);
 
-                // If the status is pending, keep polling
-                if (historyResponse.scrape_status === "pending") {
+                // If the status is pending or still running Agoda spider, keep polling
+                if (
+                    historyResponse.scrape_status === "pending" ||
+                    historyResponse.scrape_status === "booking_spider_completed" ||
+                    historyResponse.scrape_status === "running_agoda_spider"
+                ) {
+                    // Get any available booking.com results while waiting for Agoda
+                    const response = await ScrappedService.readScrappedItems({
+                        historyId: search_id,
+                        skip: 0,
+                        limit: 100,
+                    });
+
+                    console.log("Partial API Response:", response);
+                    const responseData = (response as any).data || [];
+                    setHotels(responseData);
+
+                    // Continue polling
                     pollInterval = setInterval(fetchHotels, 5000); // Poll every 5 seconds
                     return;
                 }
 
                 // If there's an error, stop polling
-                if (historyResponse.scrape_status === "error") {
+                if (historyResponse.scrape_status.includes("failed") || historyResponse.scrape_status === "error") {
                     setError("Failed to fetch hotels. Please try again.");
                     setLoading(false);
                     return;
@@ -115,7 +133,13 @@ function SearchResults() {
         };
     }, [search_id]);
 
-    if (loading) {
+    // Helper function to determine which price is better
+    const getBestPrice = (priceBooking: number, priceAgoda: number | null): 'booking' | 'agoda' | null => {
+        if (!priceAgoda) return 'booking';
+        return priceAgoda < priceBooking ? 'agoda' : 'booking';
+    };
+
+    if (loading && hotels.length === 0) {
         return (
             <Center h="100vh">
                 <VStack gap={4}>
@@ -140,6 +164,18 @@ function SearchResults() {
     return (
         <Container maxW="container.xl" py={8}>
             <Heading mb={6}>Search Results</Heading>
+
+            {status !== "completed" && (
+                <Box mb={6} p={4} bg="blue.50" borderRadius="md">
+                    <HStack>
+                        <Spinner size="sm" />
+                        <Text>
+                            Loading Booking.com results... Agoda prices will be added when available.
+                        </Text>
+                    </HStack>
+                </Box>
+            )}
+
             <Grid
                 templateColumns={{
                     base: "1fr",
@@ -148,63 +184,114 @@ function SearchResults() {
                 }}
                 gap={6}
             >
-                {hotels.map((hotel) => (
-                    <Box
-                        key={hotel.id}
-                        borderWidth="1px"
-                        borderRadius="lg"
-                        overflow="hidden"
-                        shadow="md"
-                        transition="transform 0.2s"
-                        _hover={{ transform: "translateY(-4px)" }}
-                    >
-                        <Image
-                            src={hotel.image_url || "https://via.placeholder.com/300x200?text=No+Image"}
-                            alt={hotel.title}
-                            height="200px"
-                            width="100%"
-                            objectFit="cover"
-                        />
-                        <VStack p={4} align="stretch" gap={3}>
-                            <Heading as="h3" size="md" truncate>
-                                {hotel.title}
-                            </Heading>
+                {hotels.map((hotel) => {
+                    const bestPrice = getBestPrice(hotel.price_booking, hotel.price_agoda);
 
-                            <HStack>
-                                {hotel.stars && (
-                                    <HStack gap={1}>
-                                        {[...Array(Math.floor(hotel.stars))].map((_, i) => (
-                                            <FaStar key={i} color="yellow.400" />
-                                        ))}
-                                        <Text ml={1} color="gray.600">
-                                            ({hotel.stars})
+                    return (
+                        <Box
+                            key={hotel.id}
+                            borderWidth="1px"
+                            borderRadius="lg"
+                            overflow="hidden"
+                            shadow="md"
+                            transition="transform 0.2s"
+                            _hover={{ transform: "translateY(-4px)" }}
+                        >
+                            <Image
+                                src={hotel.image_url || "https://via.placeholder.com/300x200?text=No+Image"}
+                                alt={hotel.title}
+                                height="200px"
+                                width="100%"
+                                objectFit="cover"
+                            />
+                            <VStack p={4} align="stretch" gap={3}>
+                                <Heading as="h3" size="md" noOfLines={2}>
+                                    {hotel.title}
+                                </Heading>
+
+                                <HStack>
+                                    {hotel.stars && (
+                                        <HStack gap={1}>
+                                            {[...Array(Math.floor(hotel.stars))].map((_, i) => (
+                                                <FaStar key={i} color="gold" />
+                                            ))}
+                                            <Text ml={1} color="gray.600">
+                                                ({hotel.stars})
+                                            </Text>
+                                        </HStack>
+                                    )}
+                                </HStack>
+
+                                <VStack align="stretch" spacing={2}>
+                                    <HStack justify="space-between">
+                                        <Text fontSize="xl" fontWeight="bold" color="blue.600">
+                                            Booking.com: BDT {hotel.price_booking.toLocaleString()}
                                         </Text>
+                                        {bestPrice === 'booking' && (
+                                            <Badge variant="solid" colorScheme="green">
+                                                <HStack>
+                                                    <HiTag />
+                                                    <Text>Best Price</Text>
+                                                </HStack>
+                                            </Badge>
+                                        )}
                                     </HStack>
+
+                                    {hotel.price_agoda && hotel.url_agoda && (
+                                        <HStack justify="space-between">
+                                            <Text fontSize="xl" fontWeight="bold" color="purple.600">
+                                                Agoda: BDT {hotel.price_agoda.toLocaleString()}
+                                            </Text>
+                                            {bestPrice === 'agoda' && (
+                                                <Badge variant="solid" colorScheme="green">
+                                                    <HStack spacing={1}>
+                                                        <HiTag />
+                                                        <Text>Best Price</Text>
+                                                    </HStack>
+                                                </Badge>
+                                            )}
+                                        </HStack>
+                                    )}
+                                </VStack>
+
+                                <ChakraLink
+                                    href={hotel.url_booking}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    color="white"
+                                    bg="blue.500"
+                                    px={4}
+                                    py={2}
+                                    borderRadius="md"
+                                    textAlign="center"
+                                    _hover={{ bg: "blue.600" }}
+                                    display="block"
+                                    mb={2}
+                                >
+                                    Book on Booking.com
+                                </ChakraLink>
+
+                                {hotel.url_agoda && (
+                                    <ChakraLink
+                                        href={hotel.url_agoda}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        color="white"
+                                        bg="purple.500"
+                                        px={4}
+                                        py={2}
+                                        borderRadius="md"
+                                        textAlign="center"
+                                        _hover={{ bg: "purple.600" }}
+                                        display="block"
+                                    >
+                                        Book on Agoda.com
+                                    </ChakraLink>
                                 )}
-                            </HStack>
-
-                            <Text fontSize="xl" fontWeight="bold" color="blue.600">
-                                BDT {hotel.price_booking.toLocaleString()}
-                            </Text>
-
-                            <ChakraLink
-                                href={hotel.url_booking}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                color="white"
-                                bg="blue.500"
-                                px={4}
-                                py={2}
-                                borderRadius="md"
-                                textAlign="center"
-                                _hover={{ bg: "blue.600" }}
-                                display="block"
-                            >
-                                Book on Booking.com
-                            </ChakraLink>
-                        </VStack>
-                    </Box>
-                ))}
+                            </VStack>
+                        </Box>
+                    );
+                })}
             </Grid>
 
             {hotels.length === 0 && (
