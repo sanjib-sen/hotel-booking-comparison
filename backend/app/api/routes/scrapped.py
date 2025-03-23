@@ -441,7 +441,11 @@ async def delete_bookmark(
     """
     Delete a bookmarked item.
     """
-    bookmark = session.get(BookMarkedScrappedItem, item_id)
+    statement = select(BookMarkedScrappedItem).where(
+        BookMarkedScrappedItem.scrapped_item_id == item_id,
+        BookMarkedScrappedItem.owner_id == current_user.id,
+    )
+    bookmark = session.exec(statement).one_or_none()
     if not bookmark:
         raise HTTPException(status_code=404, detail="Bookmark not found")
     if not current_user.is_superuser and (bookmark.owner_id != current_user.id):
