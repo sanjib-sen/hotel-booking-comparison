@@ -160,8 +160,12 @@ function SearchResults() {
                     setHotels(responseData);
 
                     // Continue polling
-                    pollInterval = setInterval(fetchHotels, 5000); // Poll every 5 seconds
-                    return;
+                    return; // Don't clear the interval, continue polling
+                }
+
+                // For status "completed", "failed", "error", or "no_results" - stop polling
+                if (pollInterval) {
+                    clearInterval(pollInterval);
                 }
 
                 // If there's an error, stop polling
@@ -193,12 +197,19 @@ function SearchResults() {
                 console.error("Error fetching hotels:", err);
                 setError(err instanceof Error ? err.message : "Failed to fetch hotels. Please try again.");
                 setLoading(false);
+                // Stop polling on error
+                if (pollInterval) {
+                    clearInterval(pollInterval);
+                }
             }
         };
 
         if (search_id) {
             fetchHotels();
             fetchBookmarks();
+
+            // Start polling only for initial fetch
+            pollInterval = setInterval(fetchHotels, 5000); // Poll every 5 seconds
         }
 
         // Cleanup function to clear the interval
