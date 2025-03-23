@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import {
     Box,
@@ -13,11 +13,14 @@ import {
     Link as ChakraLink,
     Spinner,
     Center,
+    IconButton,
+    Button,
 } from "@chakra-ui/react";
-import { FaStar } from "react-icons/fa";
+import { FaStar, FaBookmark } from "react-icons/fa";
 import { HiTag } from "react-icons/hi";
 import { ScrappedService } from "@/client";
 import { OpenAPI } from "@/client";
+import { toaster } from "@/components/ui/toaster";
 
 type ScrappedItem = {
     id: string;
@@ -41,11 +44,83 @@ export const Route = createFileRoute('/_layout/search-results')({
 
 function SearchResults() {
     const { search_id } = useSearch({ from: "/_layout/search-results" });
-    console.log("params:", search_id);
     const [hotels, setHotels] = useState<ScrappedItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [status, setStatus] = useState<string>("pending");
+    const [bookmarkedItems, setBookmarkedItems] = useState<Set<string>>(new Set());
+    const [bookmarkLoading, setBookmarkLoading] = useState<Set<string>>(new Set());
+
+    // Fetch existing bookmarks
+    const fetchBookmarks = useCallback(async () => {
+        try {
+            const response = await ScrappedService.readBookmarkedItems({
+                skip: 0,
+                limit: 100,
+            });
+
+            const bookmarkedSet = new Set<string>();
+            if (Array.isArray(response)) {
+                response.forEach(bookmark => {
+                    if (bookmark.scrapped_item_id) {
+                        bookmarkedSet.add(bookmark.scrapped_item_id);
+                    }
+                });
+            }
+            setBookmarkedItems(bookmarkedSet);
+        } catch (err) {
+            console.error("Error fetching bookmarks:", err);
+        }
+    }, []);
+
+    const toggleBookmark = async (itemId: string) => {
+        if (!itemId) return;
+
+        try {
+            setBookmarkLoading(prev => new Set(prev).add(itemId));
+
+            if (bookmarkedItems.has(itemId)) {
+                // Remove bookmark
+                await ScrappedService.deleteBookmark({
+                    itemId: itemId,
+                });
+                setBookmarkedItems(prev => {
+                    const newSet = new Set(prev);
+                    newSet.delete(itemId);
+                    return newSet;
+                });
+                toaster.create({
+                    title: "Bookmark removed",
+                    description: "The hotel has been removed from your bookmarks",
+                    type: "success",
+                });
+            } else {
+                // Add bookmark
+                const response = await ScrappedService.bookmarkScrappedItem({
+                    itemId: itemId,
+                });
+                setBookmarkedItems(prev => new Set(prev).add(itemId));
+                toaster.create({
+                    title: "Hotel bookmarked",
+                    description: "The hotel has been added to your bookmarks",
+                    type: "success",
+                });
+            }
+        } catch (err) {
+            console.error("Error toggling bookmark:", err);
+            toaster.create({
+                title: "Bookmark action failed",
+                description: "There was an error while updating your bookmark",
+                type: "error",
+            });
+        } finally {
+            setBookmarkLoading(prev => {
+                const newSet = new Set(prev);
+                newSet.delete(itemId);
+                return newSet;
+            });
+        }
+    };
 
     useEffect(() => {
         let pollInterval: NodeJS.Timeout;
@@ -123,6 +198,7 @@ function SearchResults() {
 
         if (search_id) {
             fetchHotels();
+            fetchBookmarks();
         }
 
         // Cleanup function to clear the interval
@@ -131,7 +207,7 @@ function SearchResults() {
                 clearInterval(pollInterval);
             }
         };
-    }, [search_id]);
+    }, [search_id, fetchBookmarks]);
 
     // Helper function to determine which price is better
     const getBestPrice = (priceBooking: number, priceAgoda: number | null): 'booking' | 'agoda' | null => {
@@ -186,6 +262,8 @@ function SearchResults() {
             >
                 {hotels.map((hotel) => {
                     const bestPrice = getBestPrice(hotel.price_booking, hotel.price_agoda);
+                    const isBookmarked = bookmarkedItems.has(hotel.id);
+                    const isBookmarkLoading = bookmarkLoading.has(hotel.id);
 
                     return (
                         <Box
@@ -209,17 +287,28 @@ function SearchResults() {
                                     {hotel.title}
                                 </Heading>
 
-                                <HStack>
-                                    {hotel.stars && (
-                                        <HStack gap={1}>
-                                            {[...Array(Math.floor(hotel.stars))].map((_, i) => (
-                                                <FaStar key={i} color="gold" />
-                                            ))}
-                                            <Text ml={1} color="gray.600">
-                                                ({hotel.stars})
-                                            </Text>
-                                        </HStack>
-                                    )}
+                                <HStack justify="space-between">
+                                    <HStack gap={1}>
+                                        {hotel.stars && (
+                                            <HStack gap={1}>
+                                                {[...Array(Math.floor(hotel.stars))].map((_, i) => (
+                                                    <FaStar key={i} color="gold" />
+                                                ))}
+                                                <Text ml={1} color="gray.600">
+                                                    ({hotel.stars})
+                                                </Text>
+                                            </HStack>
+                                        )}
+                                    </HStack>
+                                    <Button
+                                        aria-label="Bookmark hotel"
+                                        size="sm"
+                                        colorScheme={isBookmarked ? "blue" : "gray"}
+                                        loading={isBookmarkLoading}
+                                        onClick={() => toggleBookmark(hotel.id)}
+                                    >
+                                        {isBookmarked ? "Unbookmark" : "Bookmark"}
+                                    </Button>
                                 </HStack>
 
                                 <VStack align="stretch">
