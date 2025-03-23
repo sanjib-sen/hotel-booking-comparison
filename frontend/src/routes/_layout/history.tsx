@@ -150,7 +150,7 @@ function HistoryTable() {
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         navigate({
-                                            to: "/_layout/search-results",
+                                            to: "/search-results",
                                             search: { search_id: item.id }
                                         });
                                     }}
