@@ -1,3 +1,6 @@
+import json
+import os
+import subprocess
 import uuid
 from datetime import datetime, timedelta
 from typing import Any
@@ -18,6 +21,96 @@ from app.models import (
 )
 
 router = APIRouter(prefix="/scrapped", tags=["scrapped"])
+
+
+async def run_crawler_task(
+    history_id: uuid.UUID,
+    city: str,
+    price_min: float,
+    price_max: float,
+    stars: float,
+    session: SessionDep,
+):
+    """
+    Background task to run the booking spider crawler and save results
+    """
+    try:
+        # Create a new session for this background task
+
+        # Update history status to "running"
+
+        # Calculate checkin/checkout dates
+        tomorrow = datetime.now() + timedelta(days=1)
+        day_after_tomorrow = tomorrow + timedelta(days=1)
+        checkin = tomorrow.strftime("%Y-%m-%d")
+        checkout = day_after_tomorrow.strftime("%Y-%m-%d")
+
+        # Format price range and hotel class
+        price_range = f"BDT-{int(price_min)}-{int(price_max)}-1"
+        hotel_class = str(int(stars))
+
+        # Build command to run the spider
+        cmd = [
+            "scrapy",
+            "crawl",
+            "booking_spider",
+            "-a",
+            f"location={city}",
+            "-a",
+            f"checkin={checkin}",
+            "-a",
+            f"checkout={checkout}",
+            "-a",
+            f"price_range={price_range}",
+            "-a",
+            f"hotel_class={hotel_class}",
+            "-o",
+            f"results_{history_id}.json",
+        ]
+
+        print(f"Running command: {' '.join(cmd)}")
+
+        # Run the spider as a subprocess
+        process = subprocess.Popen(
+            cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        )
+
+        stdout, stderr = process.communicate()
+        try:
+            with open(f"results_{history_id}.json") as f:
+                results = json.load(f)
+
+            print(f"Scraped {len(results)} items")
+
+            # Create all items in a list
+            scraped_items = [
+                ScrappedItem(
+                    title=result.get("title", "Unknown"),
+                    price_booking=float(result.get("price", 0))
+                    if result.get("price")
+                    else 0,
+                    url_booking=result.get("url", ""),
+                    stars=float(result.get("stars", 0))
+                    if result.get("stars")
+                    else None,
+                    image_url=result.get("image_url", None),
+                    history_id=history_id,
+                )
+                for result in results
+            ]
+
+            # Bulk add all items
+            session.bulk_save_objects(scraped_items)
+            session.commit()
+
+        except Exception as e:
+            print(f"Error processing results: {str(e)}")
+
+    except Exception as e:
+        print(f"Background task error: {str(e)}")
+    finally:
+        os.remove(f"results_{history_id}.json")
+        print("done")
 
 
 @router.get("/history", response_model=ScrappedItemsHistoriesPublic)
@@ -61,33 +154,32 @@ def create_scrapped_history(
     """
     Create new scrapped items history and start crawler.
     """
+    # Set default values if not provided
+    city = history_in.city or "Dhaka, Bangladesh"
+    price_min = history_in.price_min or 1500
+    price_max = history_in.price_max or 25500
+    stars = history_in.stars or 3
+
     history_in_private = history_in.model_dump()
     history_in_private["scrape_status"] = "pending"
     history = ScrappedItemsHistory.model_validate(
         history_in_private, update={"owner_id": current_user.id}
     )
 
-    tomorrow = datetime.now() + timedelta(days=1)
-    day_after_tomorrow = tomorrow + timedelta(days=1)
-
-    # Format price range for Booking.com
-    price_range = f"BDT-{history_in.price_min}-{history_in.price_max}-1"
-
     session.add(history)
     session.commit()
     session.refresh(history)
 
     # Add background task to run crawler
-    # background_tasks.add_task(
-    #     run_booking_crawler_task,
-    #     history_id=history.id,
-    #     location=f"{history_in.city}, Bangladesh",
-    #     checkin=tomorrow.strftime("%Y-%m-%d"),
-    #     checkout=day_after_tomorrow.strftime("%Y-%m-%d"),
-    #     price_range=price_range,
-    #     hotel_class=history_in.stars,
-    #     session=session,
-    # )
+    background_tasks.add_task(
+        run_crawler_task,
+        history_id=history.id,
+        city=city,
+        price_min=price_min,
+        price_max=price_max,
+        stars=stars,
+        session=session,
+    )
 
     return history
 
