@@ -392,7 +392,7 @@ export class ScrappedService {
    * @param data.historyId
    * @param data.skip
    * @param data.limit
-   * @returns ScrappedItem Successful Response
+   * @returns ScrappedItemsPublic Successful Response
    * @throws ApiError
    */
   public static readScrappedItems(

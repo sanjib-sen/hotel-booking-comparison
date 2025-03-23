@@ -1,8 +1,9 @@
 import { Box, Container, Button, VStack, Heading, Text, Input, Stack, HStack, Flex, Grid } from "@chakra-ui/react"
 import { FormControl, FormLabel } from "@chakra-ui/form-control"
 import { NumberInput, NumberInputField, NumberInputStepper, NumberIncrementStepper, NumberDecrementStepper } from "@chakra-ui/number-input"
-import { createFileRoute } from "@tanstack/react-router"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useState } from "react"
+import { ScrappedService } from "@/client"
 
 export const Route = createFileRoute("/_layout/")({
   component: Dashboard,
@@ -16,6 +17,8 @@ interface FormData {
 }
 
 function Dashboard() {
+  const navigate = useNavigate()
+  const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useState<FormData>({
     city: "Dhaka",
     price_min: 0,
@@ -23,10 +26,36 @@ function Dashboard() {
     stars: 3,
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Handle form submission
-    console.log("Form submitted:", formData)
+    setIsLoading(true)
+
+    try {
+      // Create search history
+      const response = await ScrappedService.createScrappedHistory({
+        requestBody: {
+          city: formData.city,
+          price_min: formData.price_min,
+          price_max: formData.price_max,
+          stars: formData.stars,
+        }
+      })
+
+      if (!response.id) {
+        throw new Error('No search ID returned from server');
+      }
+
+      // Redirect to search results page with the history ID
+      navigate({
+        to: '/search-results',
+        search: { search_id: response.id.toString() }
+      })
+    } catch (error) {
+      console.error('Error creating search history:', error)
+      alert('Failed to start hotel search. Please try again.')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -61,12 +90,11 @@ function Dashboard() {
                 max={formData.price_max}
               >
                 <NumberInputField />
-              </NumberInput>
-              {/* <NumberInputStepper>
+                <NumberInputStepper>
                   <NumberIncrementStepper />
                   <NumberDecrementStepper />
-                </NumberInputStepper> */}
-
+                </NumberInputStepper>
+              </NumberInput>
             </FormControl>
 
             <FormControl>
@@ -77,10 +105,10 @@ function Dashboard() {
                 min={formData.price_min}
               >
                 <NumberInputField />
-                {/* <NumberInputStepper>
+                <NumberInputStepper>
                   <NumberIncrementStepper />
                   <NumberDecrementStepper />
-                </NumberInputStepper> */}
+                </NumberInputStepper>
               </NumberInput>
             </FormControl>
 
@@ -101,12 +129,18 @@ function Dashboard() {
               </NumberInput>
             </FormControl>
 
-            <Button type="submit" colorScheme="blue" width="full" size="lg">
-              Search Hotels
+            <Button
+              type="submit"
+              colorScheme="blue"
+              width="full"
+              size="lg"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Starting Search...' : 'Search Hotels'}
             </Button>
           </VStack>
         </Box>
-      </VStack >
-    </Container >
+      </VStack>
+    </Container>
   )
 }

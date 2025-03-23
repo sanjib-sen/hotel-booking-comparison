@@ -118,6 +118,15 @@ export type ScrappedItemsHistoryPublic = {
   scrape_status: string
 }
 
+export type ScrappedItemsPublic = {
+  title: string
+  price_booking: number
+  url_booking: string
+  stars: number | null
+  image_url: string | null
+  id: string
+}
+
 export type Token = {
   access_token: string
   token_type?: string
@@ -263,7 +272,7 @@ export type ScrappedReadScrappedItemsData = {
   skip?: number
 }
 
-export type ScrappedReadScrappedItemsResponse = Array<ScrappedItem>
+export type ScrappedReadScrappedItemsResponse = ScrappedItemsPublic
 
 export type ScrappedCreateScrappedItemData = {
   historyId: string

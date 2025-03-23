@@ -165,21 +165,35 @@ class ScrappedItemsHistory(ScrappedItemsHistoryBase, table=True):
 class ScrappedItemBase(SQLModel):
     title: str = Field(min_length=1, max_length=255)
     price_booking: float = Field(ge=0)
-    url_booking: str = Field(min_length=1, max_length=255)
+    url_booking: str = Field(min_length=1)
     stars: float | None = Field(default=None, ge=0, le=5)
     image_url: str | None = Field(default=None, max_length=255)
 
 
 class ScrappedItem(ScrappedItemBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    price_agoda: float = Field(ge=0)
-    url_agoda: str = Field(min_length=1, max_length=255)
+    price_agoda: float | None = Field(default=None, ge=0)
+    url_agoda: str | None = Field(default=None, max_length=255)
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
     history_id: uuid.UUID = Field(
         foreign_key="scrappeditemshistory.id", nullable=False, ondelete="CASCADE"
     )
     history: ScrappedItemsHistory | None = Relationship(back_populates="scrapped_items")
+
+
+class ScrappedItemPublic(ScrappedItemBase):
+    id: uuid.UUID
+    title: str
+    price_booking: float
+    url_booking: str
+    stars: float | None
+    image_url: str | None
+
+
+class ScrappedItemsPublic(SQLModel):
+    data: list[ScrappedItemPublic]
+    count: int
 
 
 class BookMarkedScrappedItem(SQLModel, table=True):

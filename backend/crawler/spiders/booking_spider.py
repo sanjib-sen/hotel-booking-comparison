@@ -1,9 +1,10 @@
-import scrapy
-from scrapy.crawler import CrawlerProcess
-from urllib.parse import urljoin
-import tempfile
 import json
-import os
+from urllib.parse import urljoin
+
+import scrapy
+from scrapy.utils.reactor import install_reactor
+
+install_reactor("twisted.internet.asyncioreactor.AsyncioSelectorReactor")
 
 
 class BookingSpider(scrapy.Spider):
@@ -16,6 +17,7 @@ class BookingSpider(scrapy.Spider):
         "ROBOTSTXT_OBEY": False,
         "COOKIES_ENABLED": True,
         "DOWNLOAD_DELAY": 2,
+        "TWISTED_REACTOR": "twisted.internet.asyncioreactor.AsyncioSelectorReactor",
     }
 
     def __init__(
@@ -70,110 +72,74 @@ class BookingSpider(scrapy.Spider):
         query_string = "&".join(f"{k}={v}" for k, v in params.items())
         full_url = f"{url}?{query_string}"
 
+        self.logger.info(f"Starting request to: {full_url}")
         yield scrapy.Request(
             url=full_url,
             callback=self.parse,
             meta={"dont_redirect": False, "handle_httpstatus_list": [301, 302]},
+            errback=self.handle_error,
         )
 
     def parse(self, response):
-        # Debug the URL actually being crawled
-        self.logger.info(f"Parsing URL: {response.url}")
+        try:
+            # Debug the URL actually being crawled
+            self.logger.info(f"Parsing URL: {response.url}")
 
-        # Extract all hotel property cards
-        hotel_cards = response.css('div[data-testid="property-card"]')
-        self.logger.info(f"Found {len(hotel_cards)} property cards")
+            # Extract all hotel property cards
+            hotel_cards = response.css('div[data-testid="property-card"]')
+            self.logger.info(f"Found {len(hotel_cards)} property cards")
 
-        for card in hotel_cards:
-            # Extract title
-            title = card.css('div[data-testid="title"]::text').get()
+            for card in hotel_cards:
+                try:
+                    # Extract title
+                    title = card.css('div[data-testid="title"]::text').get()
 
-            # Extract URL
-            url = card.css('a[data-testid="title-link"]::attr(href)').get()
-            if url:
-                url = urljoin(response.url, url)
+                    # Extract URL
+                    url = card.css('a[data-testid="title-link"]::attr(href)').get()
+                    if url:
+                        url = urljoin(response.url, url).split("?")[0]
 
-            # Extract rating/stars (count the star SVGs)
-            stars = len(card.css("span.fcd9eec8fb.d31eda6efc.c25361c37f"))
+                    # Extract rating/stars (count the star SVGs)
+                    stars = len(card.css("span.fcd9eec8fb.d31eda6efc.c25361c37f"))
 
-            # Extract image URL
-            image_url = card.css('img[data-testid="image"]::attr(src)').get()
+                    # Extract image URL
+                    image_url = card.css('img[data-testid="image"]::attr(src)').get()
 
-            # Extract price using data-testid
-            price = card.css(
-                'span[data-testid="price-and-discounted-price"]::text'
-            ).get()
+                    # Extract price using data-testid
+                    price_element = card.css(
+                        'span[data-testid="price-and-discounted-price"]::text'
+                    ).get()
+                    price = (
+                        price_element.replace("BDT", "").replace(",", "").strip()
+                        if price_element
+                        else None
+                    )
 
-            yield {
-                "title": title,
-                "url": url,
-                "stars": stars,
-                "image_url": image_url,
-                "price": price,
-            }
+                    if title and url:  # Only yield if we have at least title and URL
+                        result = {
+                            "title": title,
+                            "url": url,
+                            "stars": stars,
+                            "image_url": image_url,
+                            "price": price,
+                        }
+                        self.results.append(result)
+                        yield result
+                except Exception as e:
+                    self.logger.error(f"Error parsing hotel card: {e}")
+                    continue
 
+        except Exception as e:
+            self.logger.error(f"Error in parse method: {e}")
+            yield None
 
-# Updated function that returns JSON results instead of writing to a file
-def run_booking_crawler(
-    location="Dhaka, Bangladesh",
-    checkin="2025-03-22",
-    checkout="2025-03-23",
-    adults="2",
-    rooms="1",
-    children="0",
-    price_range="BDT-5500-19500-1",
-    hotel_class="4",
-):
-    """
-    Run the Booking.com crawler with the specified parameters and return the results as JSON
+    def handle_error(self, failure):
+        self.logger.error(f"Request failed: {failure.value}")
+        return None
 
-    Args:
-        location: Location/city to search for
-        checkin: Check-in date in YYYY-MM-DD format
-        checkout: Check-out date in YYYY-MM-DD format
-        adults: Number of adults
-        rooms: Number of rooms
-        children: Number of children
-        price_range: Price range filter string (e.g., 'BDT-5500-19500-1')
-        hotel_class: Hotel star rating (e.g., '4')
-
-    Returns:
-        list: List of dictionaries containing hotel information
-    """
-    # Create a temporary file to store the output
-    temp_output = tempfile.NamedTemporaryFile(delete=False, suffix=".json", mode="w+t")
-    temp_output.close()
-
-    # Configure crawler settings to write to the temporary file
-    process = CrawlerProcess(
-        {
-            "FEED_FORMAT": "json",
-            "FEED_URI": f"file://{temp_output.name}",
-        }
-    )
-
-    # Add our spider to crawl
-    process.crawl(
-        BookingSpider,
-        location=location,
-        checkin=checkin,
-        checkout=checkout,
-        adults=adults,
-        rooms=rooms,
-        children=children,
-        price_range=price_range,
-        hotel_class=hotel_class,
-    )
-
-    # Start the crawling process
-    process.start()  # The script will block here until the crawling is finished
-
-    # Read the results from the temporary file
-    with open(temp_output.name, "r") as f:
-        results = json.load(f)
-
-    # Clean up the temporary file
-    os.unlink(temp_output.name)
-
-    # Return the collected results
-    return results
+    def closed(self, reason):
+        # If output file is specified, write results to it
+        if hasattr(self, "output") and self.output and self.results:
+            with open(self.output, "w", encoding="utf-8") as f:
+                json.dump(self.results, f, ensure_ascii=False)
+            self.logger.info(f"Saved {len(self.results)} results to {self.output}")

@@ -1,7 +1,8 @@
 import uuid
+from datetime import datetime, timedelta
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from sqlmodel import func, select
 
 from app.api.deps import CurrentUser, SessionDep
@@ -13,6 +14,7 @@ from app.models import (
     ScrappedItemsHistoriesPublic,
     ScrappedItemsHistory,
     ScrappedItemsHistoryCreate,
+    ScrappedItemsPublic,
 )
 
 router = APIRouter(prefix="/scrapped", tags=["scrapped"])
@@ -54,20 +56,39 @@ def create_scrapped_history(
     session: SessionDep,
     current_user: CurrentUser,
     history_in: ScrappedItemsHistoryCreate,
+    background_tasks: BackgroundTasks,
 ) -> Any:
     """
-    Create new scrapped items history.
+    Create new scrapped items history and start crawler.
     """
-    print("history_in", history_in)
     history_in_private = history_in.model_dump()
     history_in_private["scrape_status"] = "pending"
     history = ScrappedItemsHistory.model_validate(
         history_in_private, update={"owner_id": current_user.id}
     )
-    print("history", history)
+
+    tomorrow = datetime.now() + timedelta(days=1)
+    day_after_tomorrow = tomorrow + timedelta(days=1)
+
+    # Format price range for Booking.com
+    price_range = f"BDT-{history_in.price_min}-{history_in.price_max}-1"
+
     session.add(history)
     session.commit()
     session.refresh(history)
+
+    # Add background task to run crawler
+    # background_tasks.add_task(
+    #     run_booking_crawler_task,
+    #     history_id=history.id,
+    #     location=f"{history_in.city}, Bangladesh",
+    #     checkin=tomorrow.strftime("%Y-%m-%d"),
+    #     checkout=day_after_tomorrow.strftime("%Y-%m-%d"),
+    #     price_range=price_range,
+    #     hotel_class=history_in.stars,
+    #     session=session,
+    # )
+
     return history
 
 
@@ -86,7 +107,7 @@ def read_scrapped_history_by_id(
     return history
 
 
-@router.get("/items/{history_id}", response_model=list[ScrappedItem])
+@router.get("/items/{history_id}", response_model=ScrappedItemsPublic)
 def read_scrapped_items(
     session: SessionDep,
     current_user: CurrentUser,
@@ -97,11 +118,6 @@ def read_scrapped_items(
     """
     Retrieve scrapped items for a specific history.
     """
-    history = session.get(ScrappedItemsHistory, history_id)
-    if not history:
-        raise HTTPException(status_code=404, detail="History not found")
-    if not current_user.is_superuser and (history.owner_id != current_user.id):
-        raise HTTPException(status_code=400, detail="Not enough permissions")
 
     statement = (
         select(ScrappedItem)
@@ -109,7 +125,16 @@ def read_scrapped_items(
         .offset(skip)
         .limit(limit)
     )
-    return session.exec(statement).all()
+    count_statement = (
+        select(func.count())
+        .select_from(ScrappedItem)
+        .where(ScrappedItem.history_id == history_id)
+    )
+    count = session.exec(count_statement).one()
+    return ScrappedItemsPublic(
+        data=session.exec(statement).all(),
+        count=count,
+    )
 
 
 @router.post("/items/{history_id}", response_model=ScrappedItem)
