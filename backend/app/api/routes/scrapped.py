@@ -103,8 +103,17 @@ async def run_crawler_task(
             session.bulk_save_objects(scraped_items)
             session.commit()
 
+            scrapped_history = session.get(ScrappedItemsHistory, history_id)
+            scrapped_history.scrape_status = "booking_spider_completed"
+            session.commit()
+            session.refresh(scrapped_history)
+
         except Exception as e:
             print(f"Error processing results: {str(e)}")
+            scrapped_history = session.get(ScrappedItemsHistory, history_id)
+            scrapped_history.scrape_status = f"failed. {str(e)}"
+            session.commit()
+            session.refresh(scrapped_history)
 
     except Exception as e:
         print(f"Background task error: {str(e)}")
@@ -214,6 +223,9 @@ def read_scrapped_items(
     statement = (
         select(ScrappedItem)
         .where(ScrappedItem.history_id == history_id)
+        .join(ScrappedItemsHistory)
+        .where(ScrappedItemsHistory.owner_id == current_user.id)
+        .order_by(ScrappedItem.created_at.desc())
         .offset(skip)
         .limit(limit)
     )

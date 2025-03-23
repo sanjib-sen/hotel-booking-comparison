@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useParams, useSearch } from "@tanstack/react-router";
 import {
     Box,
     Container,
@@ -38,7 +38,7 @@ export const Route = createFileRoute('/_layout/search-results')({
 });
 
 function SearchResults() {
-    const { search_id } = Route.useParams();
+    const { search_id } = useSearch({ from: "/_layout/search-results" });
     console.log("params:", search_id);
     const [hotels, setHotels] = useState<ScrappedItem[]>([]);
     const [loading, setLoading] = useState(true);
