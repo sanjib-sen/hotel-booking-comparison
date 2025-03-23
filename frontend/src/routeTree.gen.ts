@@ -21,6 +21,7 @@ import { Route as LayoutSettingsImport } from './routes/_layout/settings'
 import { Route as LayoutSearchResultsImport } from './routes/_layout/search-results'
 import { Route as LayoutItemsImport } from './routes/_layout/items'
 import { Route as LayoutHistoryImport } from './routes/_layout/history'
+import { Route as LayoutBookmarksImport } from './routes/_layout/bookmarks'
 import { Route as LayoutAdminImport } from './routes/_layout/admin'
 
 // Create/Update Routes
@@ -75,6 +76,11 @@ const LayoutHistoryRoute = LayoutHistoryImport.update({
   getParentRoute: () => LayoutRoute,
 } as any)
 
+const LayoutBookmarksRoute = LayoutBookmarksImport.update({
+  path: '/bookmarks',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
 const LayoutAdminRoute = LayoutAdminImport.update({
   path: '/admin',
   getParentRoute: () => LayoutRoute,
@@ -108,6 +114,10 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LayoutAdminImport
       parentRoute: typeof LayoutImport
     }
+    '/_layout/bookmarks': {
+      preLoaderRoute: typeof LayoutBookmarksImport
+      parentRoute: typeof LayoutImport
+    }
     '/_layout/history': {
       preLoaderRoute: typeof LayoutHistoryImport
       parentRoute: typeof LayoutImport
@@ -136,6 +146,7 @@ declare module '@tanstack/react-router' {
 export const routeTree = rootRoute.addChildren([
   LayoutRoute.addChildren([
     LayoutAdminRoute,
+    LayoutBookmarksRoute,
     LayoutHistoryRoute,
     LayoutItemsRoute,
     LayoutSearchResultsRoute,

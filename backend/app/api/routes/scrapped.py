@@ -365,6 +365,26 @@ async def read_scrapped_items(
     )
 
 
+@router.get("/item/{item_id}", response_model=ScrappedItem)
+async def read_scrapped_item(
+    session: SessionDep,
+    current_user: CurrentUser,
+    item_id: uuid.UUID,
+) -> Any:
+    """
+    Retrieve a specific scrapped item.
+    """
+    statement = select(ScrappedItem).where(
+        ScrappedItem.id == item_id,
+    )
+    item = session.exec(statement).one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    if not current_user.is_superuser and (item.history.owner_id != current_user.id):
+        raise HTTPException(status_code=400, detail="Not enough permissions")
+    return item
+
+
 @router.post("/items/{history_id}", response_model=ScrappedItem)
 async def create_scrapped_item(
     *,

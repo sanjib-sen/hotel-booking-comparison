@@ -211,7 +211,10 @@ class BookMarkedScrappedItem(SQLModel, table=True):
 
 
 class BookMarkedScrappedItemCreate(SQLModel):
-    pass
+    id: uuid.UUID
+    scrapped_item_id: uuid.UUID
+    owner_id: uuid.UUID
+    bookmarked_at: datetime
 
 
 class ScrappedItemCreate(ScrappedItemBase):

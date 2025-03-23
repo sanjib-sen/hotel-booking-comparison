@@ -288,6 +288,12 @@ export type ScrappedCreateScrappedItemData = {
 
 export type ScrappedCreateScrappedItemResponse = ScrappedItem
 
+export type ScrappedReadScrappedItemData = {
+  itemId: string
+}
+
+export type ScrappedReadScrappedItemResponse = ScrappedItem
+
 export type ScrappedBookmarkScrappedItemData = {
   itemId: string
 }

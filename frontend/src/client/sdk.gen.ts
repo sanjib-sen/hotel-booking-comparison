@@ -35,6 +35,8 @@ import type {
   ScrappedReadScrappedItemsResponse,
   ScrappedCreateScrappedItemData,
   ScrappedCreateScrappedItemResponse,
+  ScrappedReadScrappedItemData,
+  ScrappedReadScrappedItemResponse,
   ScrappedBookmarkScrappedItemData,
   ScrappedBookmarkScrappedItemResponse,
   ScrappedDeleteBookmarkData,
@@ -434,6 +436,29 @@ export class ScrappedService {
       },
       body: data.requestBody,
       mediaType: "application/json",
+      errors: {
+        422: "Validation Error",
+      },
+    })
+  }
+
+  /**
+   * Read Scrapped Item
+   * Retrieve a specific scrapped item.
+   * @param data The data for the request.
+   * @param data.itemId
+   * @returns ScrappedItem Successful Response
+   * @throws ApiError
+   */
+  public static readScrappedItem(
+    data: ScrappedReadScrappedItemData,
+  ): CancelablePromise<ScrappedReadScrappedItemResponse> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/v1/scrapped/item/{item_id}",
+      path: {
+        item_id: data.itemId,
+      },
       errors: {
         422: "Validation Error",
       },
