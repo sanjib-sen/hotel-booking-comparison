@@ -166,7 +166,7 @@ function SearchResults() {
             <Heading mb={6}>Search Results</Heading>
 
             {status !== "completed" && (
-                <Box mb={6} p={4} bg="blue.50" borderRadius="md">
+                <Box mb={6} p={4} bg="blue.50" _dark={{ bg: "blue.900" }} borderRadius="md">
                     <HStack>
                         <Spinner size="sm" />
                         <Text>
@@ -205,7 +205,7 @@ function SearchResults() {
                                 objectFit="cover"
                             />
                             <VStack p={4} align="stretch" gap={3}>
-                                <Heading as="h3" size="md" noOfLines={2}>
+                                <Heading as="h3" size="md">
                                     {hotel.title}
                                 </Heading>
 
@@ -222,7 +222,7 @@ function SearchResults() {
                                     )}
                                 </HStack>
 
-                                <VStack align="stretch" spacing={2}>
+                                <VStack align="stretch">
                                     <HStack justify="space-between">
                                         <Text fontSize="xl" fontWeight="bold" color="blue.600">
                                             Booking.com: BDT {hotel.price_booking.toLocaleString()}
@@ -244,7 +244,7 @@ function SearchResults() {
                                             </Text>
                                             {bestPrice === 'agoda' && (
                                                 <Badge variant="solid" colorScheme="green">
-                                                    <HStack spacing={1}>
+                                                    <HStack>
                                                         <HiTag />
                                                         <Text>Best Price</Text>
                                                     </HStack>
