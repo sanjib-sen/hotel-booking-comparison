@@ -314,7 +314,7 @@ function SearchResults() {
                                 <VStack align="stretch">
                                     <HStack justify="space-between">
                                         <Text fontSize="xl" fontWeight="bold" color="blue.600">
-                                            Booking.com: BDT {hotel.price_booking.toLocaleString()}
+                                            Booking: BDT {hotel.price_booking.toLocaleString()}
                                         </Text>
                                         {bestPrice === 'booking' && (
                                             <Badge variant="solid" colorScheme="green">
