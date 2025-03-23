@@ -42,6 +42,7 @@ class BookingSpider(scrapy.Spider):
         self.children = children
         self.price_range = price_range
         self.hotel_class = hotel_class
+        self.results = []
 
     def start_requests(self):
         url = "https://www.booking.com/searchresults.html"
