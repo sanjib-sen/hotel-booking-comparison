@@ -1,9 +1,6 @@
 from urllib.parse import urljoin
 
 import scrapy
-from scrapy.utils.reactor import install_reactor
-
-install_reactor("twisted.internet.asyncioreactor.AsyncioSelectorReactor")
 
 
 class BookingSpider(scrapy.Spider):
