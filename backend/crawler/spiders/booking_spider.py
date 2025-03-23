@@ -1,4 +1,3 @@
-import json
 from urllib.parse import urljoin
 
 import scrapy
@@ -137,10 +136,3 @@ class BookingSpider(scrapy.Spider):
     def handle_error(self, failure):
         self.logger.error(f"Request failed: {failure.value}")
         return None
-
-    def closed(self, reason):
-        # If output file is specified, write results to it
-        if hasattr(self, "output") and self.output and self.results:
-            with open(self.output, "w", encoding="utf-8") as f:
-                json.dump(self.results, f, ensure_ascii=False)
-            self.logger.info(f"Saved {len(self.results)} results to {self.output}")
